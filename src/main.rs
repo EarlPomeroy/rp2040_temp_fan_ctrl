@@ -14,8 +14,9 @@
 #![no_std]
 #![no_main]
 
-mod write_to;
-use crate::write_to::write_to::show;
+// (Uncomment for LCD)
+// mod write_to;
+// use crate::write_to::write_to::show;
 
 // Ensure we halt the program on panic
 use panic_halt as _;
@@ -23,7 +24,9 @@ use panic_halt as _;
 // Some traits we need
 use embedded_hal::adc::OneShot;
 use embedded_hal::digital::v2::OutputPin;
-use fugit::RateExtU32;
+
+// (Uncomment for LCD)
+// use fugit::RateExtU32;
 
 // Alias for our HAL crate
 use rp2040_hal as hal;
@@ -83,9 +86,9 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    // Configure two pins as being I²C, not GPIO
-    let sda_pin = pins.gpio4.into_mode::<hal::gpio::FunctionI2C>();
-    let scl_pin = pins.gpio5.into_mode::<hal::gpio::FunctionI2C>();
+    // Configure two pins as being I²C, not GPIO (Uncomment for LCD)
+    // let sda_pin = pins.gpio4.into_mode::<hal::gpio::FunctionI2C>();
+    // let scl_pin = pins.gpio5.into_mode::<hal::gpio::FunctionI2C>();
 
     let mut fan_ctrl_pin = pins.gpio6.into_push_pull_output();
 
@@ -98,29 +101,34 @@ fn main() -> ! {
     // Create the I²C drive, using the two pre-configured pins. This will fail
     // at compile time if the pins are in the wrong mode, or if this I²C
     // peripheral isn't available on these pins!
-    let mut i2c = hal::I2C::i2c0(
-        pac.I2C0,
-        sda_pin,
-        scl_pin, // Try `not_an_scl_pin` here
-        400.kHz(),
-        &mut pac.RESETS,
-        &clocks.system_clock,
-    );
+    // (Uncomment for LCD)
+    // let mut i2c = hal::I2C::i2c0(
+    //     pac.I2C0,
+    //     sda_pin,
+    //     scl_pin, // Try `not_an_scl_pin` here
+    //     400.kHz(),
+    //     &mut pac.RESETS,
+    //     &clocks.system_clock,
+    // );
 
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-    let mut lcd = lcd_lcm1602_i2c::Lcd::new(&mut i2c, &mut delay)
-        .address(0x27)
-        .cursor_on(false) // no visible cursors
-        .rows(2) // two rows
-        .init()
-        .unwrap();
+
+    // (Uncomment for LCD)
+    // let mut lcd = lcd_lcm1602_i2c::Lcd::new(&mut i2c, &mut delay)
+    //     .address(0x27)
+    //     .cursor_on(false) // no visible cursors
+    //     .rows(2) // two rows
+    //     .init()
+    //     .unwrap();
 
     // The 12-bit ADC pin reading is between 0 and 4096 for thermistor
     let conversion_factor = 3.3 / 4096.0;
     let resistor_val: f64 = 10000.0;
     fan_ctrl_pin.set_low().unwrap();
-    lcd = lcd.init().unwrap();
-    lcd.clear().unwrap();
+
+    // (Uncomment for LCD)
+    // lcd = lcd.init().unwrap();
+    // lcd.clear().unwrap();
 
     loop {
         // read 12-bit value and convert to some percentage of the 3.3v
@@ -135,21 +143,27 @@ fn main() -> ! {
         // convert to Celsius
         let temp = temp_k - 273.15;
 
-        if temp > 30.0 {
+        // Set to 50 C for fans on. Use 30 C for testing with body temp.
+        if temp > 50.0 {
             fan_ctrl_pin.set_high().unwrap();
         } else {
             fan_ctrl_pin.set_low().unwrap();
         }
 
-        let mut buf = [0u8; 64];
+        // Delay 15 seconds between measurements
+        // Comment this out for LCD and the lcd_lcm1602_i2c takes ownership of the delay.
+        delay.delay_ms(15000)
 
-        lcd.set_cursor(0, 0).unwrap();
-        let output: &str = show(&mut buf, format_args!("Temp: {}", temp)).unwrap();
-        lcd.write_str(output).unwrap();
+        // (Uncomment for LCD)
+        // let mut buf = [0u8; 64];
 
-        lcd.set_cursor(1, 0).unwrap();
-        let output: &str = show(&mut buf, format_args!("Pin val: {}", adc_temp_value)).unwrap();
-        lcd.write_str(output).unwrap();
+        // lcd.set_cursor(0, 0).unwrap();
+        // let output: &str = show(&mut buf, format_args!("Temp: {}", temp)).unwrap();
+        // lcd.write_str(output).unwrap();
+
+        // lcd.set_cursor(1, 0).unwrap();
+        // let output: &str = show(&mut buf, format_args!("Pin val: {}", adc_temp_value)).unwrap();
+        // lcd.write_str(output).unwrap();
     }
 }
 
