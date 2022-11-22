@@ -143,16 +143,19 @@ fn main() -> ! {
         // convert to Celsius
         let temp = temp_k - 273.15;
 
-        // Set to 50 C for fans on. Use 30 C for testing with body temp.
+        // Set to 50 C for fans on. Use 25 C for testing with body temp.
         if temp > 50.0 {
             fan_ctrl_pin.set_high().unwrap();
+            // leave the fan on for one minutes before checking again
+            // Comment this out for LCD and the lcd_lcm1602_i2c takes ownership of the delay.
+            delay.delay_ms(60000);
         } else {
             fan_ctrl_pin.set_low().unwrap();
-        }
 
-        // Delay 15 seconds between measurements
-        // Comment this out for LCD and the lcd_lcm1602_i2c takes ownership of the delay.
-        delay.delay_ms(15000)
+            // Delay 15 seconds between measurements
+            // Comment this out for LCD and the lcd_lcm1602_i2c takes ownership of the delay.
+            delay.delay_ms(15000);
+        }
 
         // (Uncomment for LCD)
         // let mut buf = [0u8; 64];
